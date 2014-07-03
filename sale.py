@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, current_app, abort, g, \
     url_for, request, session
 from galatea.tryton import tryton
-from galatea.utils import get_tryton_locale
 from galatea.helpers import login_required
 from flask.ext.babel import gettext as _
 from flask.ext.paginate import Pagination
@@ -20,12 +19,6 @@ SALE_FIELD_NAMES = [
     'create_date', 'sale_date', 'reference', 'state',
     'untaxed_amount', 'tax_amount', 'total_amount',
     ]
-
-@tryton.default_context
-def default_context():
-    context = {}
-    context['language'] = get_tryton_locale(g.language)
-    return context
 
 @sale.route("/<id>", endpoint="sale")
 @tryton.transaction()
