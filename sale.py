@@ -28,11 +28,14 @@ def sale_detail(lang, id):
     Not required login decorator because create new sale
     anonymous users (not loggin in)
     '''
+    customer = session.get('customer')
+    if not session.get('logged_in'):
+        session.pop('customer', None)
 
     sales = Sale.search([
         ('id', '=', id),
         ('shop', 'in', shops),
-        ('party', '=', session['customer']),
+        ('party', '=', customer),
         ('state', 'not in', state_exclude),
         ], limit=1)
     if not sales:
