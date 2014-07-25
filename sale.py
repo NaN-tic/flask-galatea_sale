@@ -9,9 +9,9 @@ sale = Blueprint('sale', __name__, template_folder='templates')
 
 DISPLAY_MSG = _('Displaying <b>{start} - {end}</b> {record_name} in total <b>{total}</b>')
 
-shops = current_app.config.get('TRYTON_SALE_SHOPS')
-limit = current_app.config.get('TRYTON_PAGINATION_SALE_LIMIT', 20)
-state_exclude = current_app.config.get('TRYTON_SALE_STATE_EXCLUDE', [])
+SHOPS = current_app.config.get('TRYTON_SALE_SHOPS')
+LIMIT = current_app.config.get('TRYTON_PAGINATION_SALE_LIMIT', 20)
+STATE_EXCLUDE = current_app.config.get('TRYTON_SALE_STATE_EXCLUDE', [])
 
 Sale = tryton.pool.get('sale.sale')
 
@@ -34,9 +34,9 @@ def sale_detail(lang, id):
 
     sales = Sale.search([
         ('id', '=', id),
-        ('shop', 'in', shops),
+        ('shop', 'in', SHOPS),
         ('party', '=', customer),
-        ('state', 'not in', state_exclude),
+        ('state', 'not in', STATE_EXCLUDE),
         ], limit=1)
     if not sales:
         abort(404)
@@ -72,22 +72,22 @@ def sale_list(lang):
         page = 1
 
     domain = [
-        ('shop', 'in', shops),
+        ('shop', 'in', SHOPS),
         ('party', '=', session['customer']),
-        ('state', 'not in', state_exclude),
+        ('state', 'not in', STATE_EXCLUDE),
         ]
     total = Sale.search_count(domain)
-    offset = (page-1)*limit
+    offset = (page-1)*LIMIT
 
     order = [
         ('sale_date', 'DESC'),
         ('id', 'DESC'),
         ]
     sales = Sale.search_read(
-        domain, offset, limit, order, SALE_FIELD_NAMES)
+        domain, offset, LIMIT, order, SALE_FIELD_NAMES)
 
     pagination = Pagination(
-        page=page, total=total, per_page=limit, display_msg=DISPLAY_MSG, bs_version='3')
+        page=page, total=total, per_page=LIMIT, display_msg=DISPLAY_MSG, bs_version='3')
 
     #breadcumbs
     breadcrumbs = [{
