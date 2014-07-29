@@ -2,12 +2,12 @@ from flask import Blueprint, render_template, current_app, abort, g, \
     url_for, request, session
 from galatea.tryton import tryton
 from galatea.helpers import login_required
-from flask.ext.babel import gettext as _
+from flask.ext.babel import gettext as _, lazy_gettext as __
 from flask.ext.paginate import Pagination
 
 sale = Blueprint('sale', __name__, template_folder='templates')
 
-DISPLAY_MSG = _('Displaying <b>{start} - {end}</b> {record_name} of <b>{total}</b>')
+DISPLAY_MSG = __('Displaying <b>{start} - {end}</b> {record_name} of <b>{total}</b>')
 
 SHOPS = current_app.config.get('TRYTON_SALE_SHOPS')
 LIMIT = current_app.config.get('TRYTON_PAGINATION_SALE_LIMIT', 20)
