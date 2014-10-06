@@ -7,7 +7,7 @@ from flask.ext.paginate import Pagination
 
 sale = Blueprint('sale', __name__, template_folder='templates')
 
-DISPLAY_MSG = lazy_gettext('Displaying <b>{start} - {end}</b> {record_name} of <b>{total}</b>')
+DISPLAY_MSG = lazy_gettext('Displaying <b>{start} - {end}</b> of <b>{total}</b>')
 
 SHOPS = current_app.config.get('TRYTON_SALE_SHOPS')
 LIMIT = current_app.config.get('TRYTON_PAGINATION_SALE_LIMIT', 20)
