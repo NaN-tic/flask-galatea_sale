@@ -62,6 +62,7 @@ def sale_detail(lang, id):
             )
 
 @sale.route("/cancel/", methods=["POST"], endpoint="cancel")
+@login_required
 @tryton.transaction()
 def sale_cancel(lang):
     'Sale Cancel'
