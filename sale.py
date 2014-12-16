@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, current_app, abort, g, \
-    url_for, request, session
+    url_for, request, session, redirect, flash
 from galatea.tryton import tryton
 from galatea.helpers import login_required
 from flask.ext.babel import gettext as _, lazy_gettext
@@ -19,12 +19,13 @@ SALE_FIELD_NAMES = [
     'create_date', 'sale_date', 'reference', 'state',
     'untaxed_amount', 'tax_amount', 'total_amount',
     ]
+SALE_STATES_TO_CANCEL =['draft', 'quotation']
 
 @sale.route("/<id>", endpoint="sale")
 @tryton.transaction()
 def sale_detail(lang, id):
     '''Sale Detail
-    
+
     Not required login decorator because create new sale
     anonymous users (not loggin in)
     '''
@@ -59,6 +60,32 @@ def sale_detail(lang, id):
             breadcrumbs=breadcrumbs,
             sale=sale,
             )
+
+@sale.route("/cancel/", methods=["POST"], endpoint="cancel")
+@tryton.transaction()
+def sale_cancel(lang):
+    'Sale Cancel'
+    id = request.form.get('id')
+    if not id:
+        flash(_('Error when cancel. Select a sale to cancel.'), "danger")
+
+    sales = Sale.search([
+        ('id', '=', id),
+        ('shop', 'in', SHOPS),
+        ('party', '=', session['customer']),
+        ], limit=1)
+    if not sales:
+        flash(_('Error when cancel. You not have permisions to cancel.'), "danger")
+
+    sale, = sales
+    if sale.state in SALE_STATES_TO_CANCEL:
+        Sale.cancel([sale])
+        flash(_('Sale "%s" was cancelled.' % (sale.rec_name)))
+    else:
+        flash(_('Error when cancel "%s". Your sale is in a state that not available ' \
+            'to cancel. Contact Us.' % (sale.rec_name)), "danger")
+
+    return redirect(url_for('.sale', id=id, lang=g.language))
 
 @sale.route("/", endpoint="sales")
 @login_required
