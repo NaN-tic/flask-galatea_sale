@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, current_app, abort, g, \
     url_for, request, session, redirect, flash
 from galatea.tryton import tryton
-from galatea.helpers import login_required
+from galatea.helpers import login_required, customer_required
 from flask.ext.babel import gettext as _, lazy_gettext
 from flask.ext.paginate import Pagination
 
@@ -63,6 +63,7 @@ def sale_detail(lang, id):
 
 @sale.route("/cancel/", methods=["POST"], endpoint="cancel")
 @login_required
+@customer_required
 @tryton.transaction()
 def sale_cancel(lang):
     'Sale Cancel'
@@ -90,6 +91,7 @@ def sale_cancel(lang):
 
 @sale.route("/", endpoint="sales")
 @login_required
+@customer_required
 @tryton.transaction()
 def sale_list(lang):
     '''Sales'''
