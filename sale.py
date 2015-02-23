@@ -15,10 +15,6 @@ STATE_EXCLUDE = current_app.config.get('TRYTON_SALE_STATE_EXCLUDE', [])
 
 Sale = tryton.pool.get('sale.sale')
 
-SALE_FIELD_NAMES = [
-    'create_date', 'sale_date', 'reference', 'state',
-    'untaxed_amount', 'tax_amount', 'total_amount',
-    ]
 SALE_STATES_TO_CANCEL =['draft', 'quotation']
 
 @sale.route("/<id>", endpoint="sale")
@@ -113,8 +109,7 @@ def sale_list(lang):
         ('sale_date', 'DESC'),
         ('id', 'DESC'),
         ]
-    sales = Sale.search_read(
-        domain, offset, LIMIT, order, SALE_FIELD_NAMES)
+    sales = Sale.search(domain, offset, LIMIT, order)
 
     pagination = Pagination(
         page=page, total=total, per_page=LIMIT, display_msg=DISPLAY_MSG, bs_version='3')
