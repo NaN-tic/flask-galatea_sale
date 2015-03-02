@@ -17,7 +17,7 @@ Sale = tryton.pool.get('sale.sale')
 
 SALE_STATES_TO_CANCEL =['draft', 'quotation']
 
-@sale.route("/<id>", endpoint="sale")
+@sale.route("/<int:id>", endpoint="sale")
 @tryton.transaction()
 def sale_detail(lang, id):
     '''Sale Detail
