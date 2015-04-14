@@ -147,7 +147,7 @@ def sale_detail(lang, id):
         'name': _('My Account'),
         }, {
         'slug': url_for('.sales', lang=g.language),
-        'name': _('Sales'),
+        'name': _('My Sales'),
         }, {
         'slug': url_for('.sale', lang=g.language, id=sale.id),
         'name': sale.reference or _('Not reference'),
@@ -221,7 +221,7 @@ def sale_list(lang):
         'name': _('My Account'),
         }, {
         'slug': url_for('.sales', lang=g.language),
-        'name': _('Sales'),
+        'name': _('My Sales'),
         }]
 
     return render_template('sales.html',
