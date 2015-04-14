@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, current_app, abort, g, \
     url_for, request, session, redirect, flash
 from galatea.tryton import tryton
 from galatea.helpers import login_required, customer_required, manager_required
+from galatea.csrf import csrf
 from flask.ext.babel import gettext as _, lazy_gettext
 from flask.ext.paginate import Pagination
 
@@ -49,6 +50,7 @@ def admin_sale_detail(lang, id):
 
 @sale.route("/admin/cancel/", methods=["POST"], endpoint="admin-cancel")
 @manager_required
+@csrf.exempt
 @tryton.transaction()
 def admin_sale_cancel(lang):
     '''Admin Sale Cancel'''
