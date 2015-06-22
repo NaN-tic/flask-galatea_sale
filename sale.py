@@ -251,15 +251,18 @@ def last_products(lang):
     shipment_address = 'AND s.shipment_address=%s' % user.shipment_address.id  \
             if user.shipment_address else ''
 
-    # TODO Filter product esale
     query = """
         SELECT
           DISTINCT(s.product)
         FROM (
             SELECT
-              l.product FROM sale_sale s, sale_line l
+              l.product FROM sale_sale s, sale_line l, product_product p,
+              product_template t, product_template_sale_shop ts
             WHERE
-              s.id = l.sale AND l.product IS NOT NULL AND s.party=%(customer)s %(shipment_address)s
+              s.id = l.sale AND l.product = p.id AND p.template = t.id
+              AND ts.template = t.id AND s.party=%(customer)s %(shipment_address)s
+              AND l.product IS NOT NULL AND t.esale_available = true
+              AND t.esale_active = true AND ts.shop in (%(shop)s)
             ORDER BY
               l.create_date DESC
             ) s
@@ -268,6 +271,7 @@ def last_products(lang):
             'customer': session['customer'],
             'shipment_address': shipment_address,
             'limit': LIMIT_TOTAL_LAST_PRODUCTS,
+            'shop': SHOP,
         }
     cursor = Transaction().cursor
     cursor.execute(query)
