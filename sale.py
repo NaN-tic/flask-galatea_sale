@@ -201,7 +201,7 @@ def change_payment(lang):
             })
         if not current_state == 'draft':
             Sale.quote([sale])
-        flash(_('Sale "%s" was changed payment type.' % (sale.rec_name)))
+        flash('%s: %s' % (sale.rec_name, _('changed payment type.')))
     else:
         flash(_('Error when change payment type "%s". Your sale is in a state that not available ' \
             'to change payment type. Contact Us.' % (sale.rec_name)), "danger")
