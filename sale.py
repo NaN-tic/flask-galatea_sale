@@ -1,11 +1,13 @@
 from flask import Blueprint, render_template, current_app, abort, g, \
-    url_for, request, session, redirect, flash, jsonify
+    url_for, request, session, redirect, flash, jsonify, send_file
 from galatea.tryton import tryton
+from galatea.utils import slugify
 from galatea.helpers import login_required, customer_required, manager_required
 from galatea.csrf import csrf
 from flask.ext.babel import gettext as _, lazy_gettext, ngettext
 from flask.ext.paginate import Pagination
 from trytond.transaction import Transaction
+import tempfile
 
 sale = Blueprint('sale', __name__, template_folder='templates')
 
@@ -20,12 +22,42 @@ LIMIT_TOTAL_LAST_PRODUCTS = current_app.config.get('TRYTON_TOTAL_LAST_PRODUCTS_L
 STATE_EXCLUDE = current_app.config.get('TRYTON_SALE_STATE_EXCLUDE', [])
 
 Sale = tryton.pool.get('sale.sale')
+SaleReport = tryton.pool.get('sale.sale', type='report')
 SaleWishlist = tryton.pool.get('sale.wishlist')
 Cart = tryton.pool.get('sale.cart')
 Product = tryton.pool.get('product.product')
 GalateaUser = tryton.pool.get('galatea.user')
 
 SALE_STATES_TO_CANCEL =['draft', 'quotation']
+
+@sale.route("/print/<int:id>", endpoint="sale_print")
+@login_required
+@customer_required
+@tryton.transaction()
+def sale_print(lang, id):
+    '''Sale Print'''
+
+    sales = Sale.search([
+        ('id', '=', id),
+        ('party', '=', session['customer']),
+        ], limit=1)
+    
+    if not sales:
+        abort(404)
+
+    sale, = sales
+
+    _, report, _, _ = SaleReport.execute([sale.id], {})
+    report_name = 'sale-%s.pdf' % (slugify(sale.reference) or 'sale')
+
+    with tempfile.NamedTemporaryFile(
+            prefix='%s-' % current_app.config['TRYTON_DATABASE'],
+            suffix='.pdf', delete=False) as temp:
+        temp.write(report)
+    temp.close()
+    data = open(temp.name, 'rb')
+
+    return send_file(data, attachment_filename=report_name, as_attachment=True)
 
 @sale.route("/admin/<int:id>", endpoint="admin-sale")
 @manager_required
