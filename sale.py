@@ -433,11 +433,8 @@ def wishlist_add(lang):
     to_create = []
     for product in products:
         if product in repeat_products:
-            warning.append(
-                _('%(product)s already exists in your account.' % {
-                    'product': product.rec_name,
-                    }),
-                )
+            warning.append(_('"%s" already exists in your account.' % (
+                    product.rec_name)))
             continue
         to_create.append({
             'party': session['customer'],
