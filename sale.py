@@ -159,6 +159,55 @@ def admin_sale_list(lang):
             party=party,
             )
 
+@sale.route("/change-payment/", methods=["POST"], endpoint="change-payment")
+@login_required
+@customer_required
+@tryton.transaction()
+def change_payment(lang):
+    '''Change Payment Type draft or quotation sales'''
+    id = request.form.get('id')
+    payment = request.form.get('payment')
+    payment_type = None
+
+    if not id:
+        flash(_('Error when change payment. Select a sale to change payment.'), "danger")
+        return redirect(url_for('.sales', lang=g.language))
+
+    sales = Sale.search([
+        ('id', '=', id),
+        ('shop', 'in', SHOPS),
+        ('party', '=', session['customer']),
+        ], limit=1)
+    if not sales:
+        flash(_('Error when change payment. You not have permisions to change payment.'), "danger")
+        return redirect(url_for('.sales', lang=g.language))
+
+    sale, = sales
+
+    for p in sale.shop.esale_payments:
+        if str(p.id) == payment:
+            payment_type = p.payment_type
+            break
+    if not payment_type:
+        flash(_('Error when change payment. Not available Payment Type current shop.'), "danger")
+        return redirect(url_for('.sale', id=id, lang=g.language))
+
+    if sale.state in ['draft', 'quotation']:
+        current_state = sale.state
+        if not current_state == 'draft':
+            Sale.draft([sale])
+        Sale.write([sale], {
+            'payment_type': payment_type,
+            })
+        if not current_state == 'draft':
+            Sale.quote([sale])
+        flash(_('Sale "%s" was changed payment type.' % (sale.rec_name)))
+    else:
+        flash(_('Error when change payment type "%s". Your sale is in a state that not available ' \
+            'to change payment type. Contact Us.' % (sale.rec_name)), "danger")
+
+    return redirect(url_for('.sale', id=id, lang=g.language))
+
 @sale.route("/<int:id>", endpoint="sale")
 @tryton.transaction()
 def sale_detail(lang, id):
@@ -208,6 +257,7 @@ def sale_cancel(lang):
     id = request.form.get('id')
     if not id:
         flash(_('Error when cancel. Select a sale to cancel.'), "danger")
+        return redirect(url_for('.sales', lang=g.language))
 
     sales = Sale.search([
         ('id', '=', id),
@@ -216,6 +266,7 @@ def sale_cancel(lang):
         ], limit=1)
     if not sales:
         flash(_('Error when cancel. You not have permisions to cancel.'), "danger")
+        return redirect(url_for('.sales', lang=g.language))
 
     sale, = sales
     if sale.state in SALE_STATES_TO_CANCEL:
