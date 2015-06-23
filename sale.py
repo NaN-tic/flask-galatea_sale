@@ -189,7 +189,7 @@ def change_payment(lang):
             payment_type = p.payment_type
             break
     if not payment_type:
-        flash(_('Error when change payment. Not available Payment Type current shop.'), "danger")
+        flash(_('Error when change payment. Not available payment type current shop.'), "danger")
         return redirect(url_for('.sale', id=id, lang=g.language))
 
     if sale.state in ['draft', 'quotation']:
