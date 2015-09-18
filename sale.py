@@ -20,6 +20,7 @@ LIMIT_WISHLIST = current_app.config.get('TRYTON_PAGINATION_WISHLIST_LIMIT', 20)
 LIMIT_LAST_PRODUCTS = current_app.config.get('TRYTON_PAGINATION_LAST_PRODUCTS_LIMIT', 20)
 LIMIT_TOTAL_LAST_PRODUCTS = current_app.config.get('TRYTON_TOTAL_LAST_PRODUCTS_LIMIT', 200)
 STATE_EXCLUDE = current_app.config.get('TRYTON_SALE_STATE_EXCLUDE', [])
+STATE_SALE_PRINT = current_app.config.get('TRYTON_SALE_PRINT', ['done'])
 
 Sale = tryton.pool.get('sale.sale')
 SaleReport = tryton.pool.get('sale.sale', type='report')
@@ -28,7 +29,7 @@ Cart = tryton.pool.get('sale.cart')
 Product = tryton.pool.get('product.product')
 GalateaUser = tryton.pool.get('galatea.user')
 
-SALE_STATES_TO_CANCEL =['draft', 'quotation']
+SALE_STATES_TO_CANCEL = ['draft', 'quotation']
 
 @sale.route("/print/<int:id>", endpoint="sale_print")
 @login_required
@@ -40,6 +41,7 @@ def sale_print(lang, id):
     sales = Sale.search([
         ('id', '=', id),
         ('party', '=', session['customer']),
+        ('state', 'in', STATE_SALE_PRINT),
         ], limit=1)
     
     if not sales:
