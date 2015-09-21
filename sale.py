@@ -109,7 +109,7 @@ def admin_sale_cancel(lang):
 
     sale, = sales
     Sale.cancel([sale])
-    flash(_('Sale "%s" was cancelled.' % (sale.rec_name)))
+    flash(_('Sale "{sale}" was cancelled.').format(sale=sale.rec_name))
 
     return redirect(url_for('.admin-sale', id=id, lang=g.language))
 
@@ -205,8 +205,8 @@ def change_payment(lang):
             Sale.quote([sale])
         flash('%s: %s' % (sale.rec_name, _('changed payment type.')))
     else:
-        flash(_('Error when change payment type "%s". Your sale is in a state that not available ' \
-            'to change payment type. Contact Us.' % (sale.rec_name)), "danger")
+        flash(_('Error when change payment type "{sale}". Your sale is in a state that not available ' \
+            'to change payment type. Contact Us.'.format(sale=sale.rec_name)), "danger")
 
     return redirect(url_for('.sale', id=id, lang=g.language))
 
@@ -273,10 +273,10 @@ def sale_cancel(lang):
     sale, = sales
     if sale.state in SALE_STATES_TO_CANCEL:
         Sale.cancel([sale])
-        flash(_('Sale "%s" was cancelled.' % (sale.rec_name)))
+        flash(_('Sale "{sale}" was cancelled.'.format(sale=sale.rec_name)))
     else:
-        flash(_('Error when cancel "%s". Your sale is in a state that not available ' \
-            'to cancel. Contact Us.' % (sale.rec_name)), "danger")
+        flash(_('Error when cancel "{sale}". Your sale is in a state that not available ' \
+            'to cancel. Contact Us.'.format(sale=sale.rec_name)), "danger")
 
     return redirect(url_for('.sale', id=id, lang=g.language))
 
@@ -435,8 +435,8 @@ def wishlist_add(lang):
     to_create = []
     for product in products:
         if product in repeat_products:
-            warning.append(_('"%s" already exists in your account.' % (
-                    product.rec_name)))
+            warning.append(_('"{product}" already exists in your account.').format(
+                product=product.rec_name))
             continue
         to_create.append({
             'party': session['customer'],
