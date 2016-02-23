@@ -25,7 +25,6 @@ STATE_SALE_PRINT = current_app.config.get('TRYTON_SALE_PRINT', ['done'])
 Sale = tryton.pool.get('sale.sale')
 SaleReport = tryton.pool.get('sale.sale', type='report')
 SaleWishlist = tryton.pool.get('sale.wishlist')
-Cart = tryton.pool.get('sale.cart')
 Product = tryton.pool.get('product.product')
 GalateaUser = tryton.pool.get('galatea.user')
 
