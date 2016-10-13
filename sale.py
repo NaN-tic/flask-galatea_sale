@@ -4,8 +4,8 @@ from galatea.tryton import tryton
 from galatea.utils import slugify
 from galatea.helpers import login_required, customer_required, manager_required
 from galatea.csrf import csrf
-from flask.ext.babel import gettext as _, lazy_gettext, ngettext
-from flask.ext.paginate import Pagination
+from flask_babel import gettext as _, lazy_gettext, ngettext
+from flask_paginate import Pagination
 from trytond.transaction import Transaction
 import tempfile
 
