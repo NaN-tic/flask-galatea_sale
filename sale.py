@@ -357,7 +357,7 @@ def last_products(lang):
             'limit': LIMIT_TOTAL_LAST_PRODUCTS,
             'shop': SHOP,
         }
-    cursor = Transaction().cursor
+    cursor = Transaction().connection.cursor()
     cursor.execute(query)
     results = [x[0] for x in cursor.fetchall()]
 
