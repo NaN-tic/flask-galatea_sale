@@ -123,7 +123,10 @@ def admin_sale_list(lang):
     except ValueError:
         page = 1
 
-    domain = []
+    if hasattr(Sale, 'get_flask_admin_sale_list_domain'):
+        domain = Sale.get_flask_admin_sale_list_domain()
+    else:
+        domain = []
     q = request.args.get('q')
     if q:
         domain.append(('rec_name', 'ilike', '%'+q+'%'))
