@@ -130,7 +130,23 @@ def admin_sale_list(lang):
     party = request.args.get('party')
     if party:
         domain.append(('party', 'ilike', '%'+party+'%'))
-    
+    shipment_address = request.args.get('shipment_address')
+    if shipment_address:
+        shipment_address_query = '%{}%'.format(shipment_address)
+        domain.append([
+                'OR',
+                ('shipment_address.name', 'ilike', shipment_address_query),
+                ('shipment_address.street', 'ilike', shipment_address_query),
+                ('shipment_address.streetbis', 'ilike', shipment_address_query),
+                ('shipment_address.zip', 'ilike', shipment_address_query),
+                ('shipment_address.city', 'ilike', shipment_address_query),
+                ('shipment_address.country', 'ilike', shipment_address_query),
+                ('shipment_address.subdivision', 'ilike',
+                    shipment_address_query),
+                ('shipment_address.contact_mechanisms.value', 'ilike',
+                    shipment_address_query),
+                ])
+
     total = Sale.search_count(domain)
     offset = (page-1)*LIMIT
 
@@ -158,6 +174,7 @@ def admin_sale_list(lang):
             sales=sales,
             q=q,
             party=party,
+            shipment_address=shipment_address,
             )
 
 @sale.route("/change-payment/", methods=["POST"], endpoint="change-payment")
