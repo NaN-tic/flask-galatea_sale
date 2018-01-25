@@ -37,12 +37,14 @@ SALE_STATES_TO_CANCEL = ['draft', 'quotation']
 def sale_print(lang, id):
     '''Sale Print'''
 
-    sales = Sale.search([
+    domain = [
         ('id', '=', id),
-        ('party', '=', session['customer']),
         ('state', 'in', STATE_SALE_PRINT),
-        ], limit=1)
-    
+        ]
+    if not session.get('manager', False):
+        domain.append(('party', '=', session['customer']))
+    sales = Sale.search(domain, limit=1)
+
     if not sales:
         abort(404)
 
