@@ -27,6 +27,7 @@ SaleReport = tryton.pool.get('sale.sale', type='report')
 SaleWishlist = tryton.pool.get('sale.wishlist')
 Product = tryton.pool.get('product.product')
 GalateaUser = tryton.pool.get('galatea.user')
+PartyAddress = tryton.pool.get('party.address')
 
 SALE_STATES_TO_CANCEL = ['draft', 'quotation']
 
@@ -137,20 +138,10 @@ def admin_sale_list(lang):
         domain.append(('party', 'ilike', '%'+party+'%'))
     shipment_address = request.args.get('shipment_address')
     if shipment_address:
-        shipment_address_query = '%{}%'.format(shipment_address)
-        domain.append([
-                'OR',
-                ('shipment_address.name', 'ilike', shipment_address_query),
-                ('shipment_address.street', 'ilike', shipment_address_query),
-                ('shipment_address.streetbis', 'ilike', shipment_address_query),
-                ('shipment_address.zip', 'ilike', shipment_address_query),
-                ('shipment_address.city', 'ilike', shipment_address_query),
-                ('shipment_address.country', 'ilike', shipment_address_query),
-                ('shipment_address.subdivision', 'ilike',
-                    shipment_address_query),
-                ('shipment_address.contact_mechanisms.value', 'ilike',
-                    shipment_address_query),
-                ])
+        shipment_address_id = PartyAddress.search(
+            [('rec_name', 'ilike', '%'+shipment_address+'%')]
+            )
+        domain.append(('shipment_address', 'in', shipment_address_id))
 
     total = Sale.search_count(domain)
     offset = (page-1)*LIMIT
