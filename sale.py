@@ -7,6 +7,7 @@ from galatea.csrf import csrf
 from flask_babel import gettext as _, lazy_gettext, ngettext
 from flask_paginate import Pagination
 from trytond.transaction import Transaction
+from trytond.exceptions import UserError
 import tempfile
 
 sale = Blueprint('sale', __name__, template_folder='templates')
@@ -42,7 +43,7 @@ def sale_print(lang, id):
         ('party', '=', session['customer']),
         ('state', 'in', STATE_SALE_PRINT),
         ], limit=1)
-    
+
     if not sales:
         abort(404)
 
@@ -130,7 +131,7 @@ def admin_sale_list(lang):
     party = request.args.get('party')
     if party:
         domain.append(('party', 'ilike', '%'+party+'%'))
-    
+
     total = Sale.search_count(domain)
     offset = (page-1)*LIMIT
 
@@ -201,7 +202,14 @@ def change_payment(lang):
             'payment_type': payment_type,
             })
         if not current_state == 'draft':
-            Sale.quote([sale])
+            try:
+                Sale.quote([sale])
+            except UserError as e:
+                current_app.logger.info(e)
+            except Exception as e:
+                current_app.logger.info(e)
+                flash(_('We found some errors when quote your sale.' \
+                    'Contact Us.'), 'danger')
         flash('%s: %s' % (sale.rec_name, _('changed payment type.')))
     else:
         flash(_('Error when change payment type "{sale}". Your sale is in a state that not available ' \
