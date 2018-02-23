@@ -7,6 +7,7 @@ from galatea.csrf import csrf
 from flask_babel import gettext as _, lazy_gettext, ngettext
 from flask_paginate import Pagination
 from trytond.transaction import Transaction
+from trytond.exceptions import UserError
 import tempfile
 
 sale = Blueprint('sale', __name__, template_folder='templates')
@@ -27,6 +28,7 @@ SaleReport = tryton.pool.get('sale.sale', type='report')
 SaleWishlist = tryton.pool.get('sale.wishlist')
 Product = tryton.pool.get('product.product')
 GalateaUser = tryton.pool.get('galatea.user')
+PartyAddress = tryton.pool.get('party.address')
 
 SALE_STATES_TO_CANCEL = ['draft', 'quotation']
 
@@ -37,12 +39,14 @@ SALE_STATES_TO_CANCEL = ['draft', 'quotation']
 def sale_print(lang, id):
     '''Sale Print'''
 
-    sales = Sale.search([
+    domain = [
         ('id', '=', id),
-        ('party', '=', session['customer']),
         ('state', 'in', STATE_SALE_PRINT),
-        ], limit=1)
-    
+        ]
+    if not session.get('manager', False):
+        domain.append(('party', '=', session['customer']))
+    sales = Sale.search(domain, limit=1)
+
     if not sales:
         abort(404)
 
@@ -123,14 +127,23 @@ def admin_sale_list(lang):
     except ValueError:
         page = 1
 
-    domain = []
+    if hasattr(Sale, 'get_flask_admin_sale_list_domain'):
+        domain = Sale.get_flask_admin_sale_list_domain()
+    else:
+        domain = []
     q = request.args.get('q')
     if q:
         domain.append(('rec_name', 'ilike', '%'+q+'%'))
     party = request.args.get('party')
     if party:
         domain.append(('party', 'ilike', '%'+party+'%'))
-    
+    shipment_address = request.args.get('shipment_address')
+    if shipment_address:
+        shipment_address_id = PartyAddress.search(
+            [('rec_name', 'ilike', '%'+shipment_address+'%')]
+            )
+        domain.append(('shipment_address', 'in', shipment_address_id))
+
     total = Sale.search_count(domain)
     offset = (page-1)*LIMIT
 
@@ -158,6 +171,7 @@ def admin_sale_list(lang):
             sales=sales,
             q=q,
             party=party,
+            shipment_address=shipment_address,
             )
 
 @sale.route("/change-payment/", methods=["POST"], endpoint="change-payment")
@@ -201,7 +215,14 @@ def change_payment(lang):
             'payment_type': payment_type,
             })
         if not current_state == 'draft':
-            Sale.quote([sale])
+            try:
+                Sale.quote([sale])
+            except UserError as e:
+                current_app.logger.info(e)
+            except Exception as e:
+                current_app.logger.info(e)
+                flash(_('We found some errors when quote your sale.' \
+                    'Contact Us.'), 'danger')
         flash('%s: %s' % (sale.rec_name, _('changed payment type.')))
     else:
         flash(_('Error when change payment type "{sale}". Your sale is in a state that not available ' \
