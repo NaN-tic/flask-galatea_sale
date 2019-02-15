@@ -249,9 +249,17 @@ def sale_detail(lang, id):
         ('state', 'not in', STATE_EXCLUDE),
         ], limit=1)
     if not sales:
-        abort(404)
+        if not session.get('logged_in'):
+            session['next'] = url_for('.sale', lang=lang, id=id)
+            try:
+                url = url_for('portal.login', lang=lang)
+            except:
+                url = url_for('galatea.login', lang=lang)
+            return redirect(url)
+        else:
+            abort(404)
 
-    sale, = Sale.browse(sales)
+    sale, = sales
 
     #breadcumbs
     breadcrumbs = [{
