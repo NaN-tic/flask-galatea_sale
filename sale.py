@@ -53,7 +53,7 @@ def sale_print(lang, id):
     sale, = sales
 
     _, report, _, _ = SaleReport.execute([sale.id], {})
-    report_name = 'sale-%s.pdf' % (slugify(sale.reference) or 'sale')
+    report_name = 'sale-%s.pdf' % (slugify(sale.number) or 'sale')
 
     with tempfile.NamedTemporaryFile(
             prefix='%s-' % current_app.config['TRYTON_DATABASE'],
@@ -86,7 +86,7 @@ def admin_sale_detail(lang, id):
         'name': _('Sales'),
         }, {
         'slug': url_for('.admin-sale', lang=g.language, id=sale.id),
-        'name': sale.reference or _('Not reference'),
+        'name': sale.number or _('Not reference'),
         }]
 
     return render_template('admin/sale.html',
@@ -270,7 +270,7 @@ def sale_detail(lang, id):
         'name': _('Sales'),
         }, {
         'slug': url_for('.sale', lang=g.language, id=sale.id),
-        'name': sale.reference or _('Not reference'),
+        'name': sale.number or _('Not reference'),
         }]
 
     return render_template('sale.html',
