@@ -1,2 +1,1 @@
-from sale import *
-
+from .sale import *
