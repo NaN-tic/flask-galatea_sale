@@ -41,10 +41,18 @@ def sale_print(lang, id):
 
     domain = [
         ('id', '=', id),
+        ('shop', 'in', SHOPS),
         ('state', 'in', STATE_SALE_PRINT),
         ]
     if not session.get('manager', False):
-        domain.append(('party', '=', session['customer']))
+        if session.get('b2b'):
+            domain += [['OR',
+                ('party', '=', session['customer']),
+                ('shipment_party', '=', session['customer'])
+                ]]
+        else:
+            domain.append(('party', '=', session['customer']))
+
     sales = Sale.search(domain, limit=1)
 
     if not sales:
@@ -188,11 +196,20 @@ def change_payment(lang):
         flash(_('Error when change payment. Select a sale to change payment.'), "danger")
         return redirect(url_for('.sales', lang=g.language))
 
-    sales = Sale.search([
+    domain = [
         ('id', '=', id),
         ('shop', 'in', SHOPS),
-        ('party', '=', session['customer']),
-        ], limit=1)
+        ('state', 'not in', STATE_EXCLUDE),
+        ]
+    if session.get('b2b'):
+        domain += [['OR',
+            ('party', '=', session['customer']),
+            ('shipment_party', '=', session['customer'])
+            ]]
+    else:
+        domain.append(('party', '=', session['customer']))
+
+    sales = Sale.search(domain, limit=1)
     if not sales:
         flash(_('Error when change payment. You not have permisions to change payment.'), "danger")
         return redirect(url_for('.sales', lang=g.language))
@@ -238,16 +255,23 @@ def sale_detail(lang, id):
     Not required login decorator because create new sale
     anonymous users (not loggin in)
     '''
-    customer = session.get('customer')
     if not session.get('logged_in'):
         session.pop('customer', None)
 
-    sales = Sale.search([
+    domain = [
         ('id', '=', id),
         ('shop', 'in', SHOPS),
-        ('party', '=', customer),
         ('state', 'not in', STATE_EXCLUDE),
-        ], limit=1)
+        ]
+    if session.get('b2b'):
+        domain += [['OR',
+            ('party', '=', session['customer']),
+            ('shipment_party', '=', session['customer'])
+            ]]
+    else:
+        domain.append(('party', '=', session['customer']))
+
+    sales = Sale.search(domain, limit=1)
     if not sales:
         if not session.get('logged_in'):
             session['next'] = url_for('.sale', lang=lang, id=id)
@@ -289,11 +313,19 @@ def sale_cancel(lang):
         flash(_('Error when cancel. Select a sale to cancel.'), "danger")
         return redirect(url_for('.sales', lang=g.language))
 
-    sales = Sale.search([
-        ('id', '=', id),
+    domain = [
         ('shop', 'in', SHOPS),
-        ('party', '=', session['customer']),
-        ], limit=1)
+        ('state', 'not in', STATE_EXCLUDE),
+        ]
+    if session.get('b2b'):
+        domain += [['OR',
+            ('party', '=', session['customer']),
+            ('shipment_party', '=', session['customer'])
+            ]]
+    else:
+        domain.append(('party', '=', session['customer']))
+
+    sales = Sale.search(domain, limit=1)
     if not sales:
         flash(_('Error when cancel. You not have permisions to cancel.'), "danger")
         return redirect(url_for('.sales', lang=g.language))
@@ -322,9 +354,16 @@ def sale_list(lang):
 
     domain = [
         ('shop', 'in', SHOPS),
-        ('party', '=', session['customer']),
         ('state', 'not in', STATE_EXCLUDE),
         ]
+    if session.get('b2b'):
+        domain += [['OR',
+            ('party', '=', session['customer']),
+            ('shipment_party', '=', session['customer'])
+            ]]
+    else:
+        domain.append(('party', '=', session['customer']))
+
     total = Sale.search_count(domain)
     offset = (page-1)*LIMIT
 
@@ -351,7 +390,6 @@ def sale_list(lang):
             pagination=pagination,
             sales=sales,
             )
-
 
 @sale.route("/last-products", endpoint="last-products")
 @login_required
