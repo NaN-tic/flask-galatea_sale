@@ -298,6 +298,8 @@ def sale_cancel(lang):
         flash(_('Error when cancel "{sale}". Your sale is in a state that not available ' \
             'to cancel. Contact Us.'.format(sale=sale.rec_name)), "danger")
 
+    if 'cancel' in STATE_EXCLUDE:
+        return redirect(url_for('.sales', lang=g.language))
     return redirect(url_for('.sale', id=id, lang=g.language))
 
 @sale.route("/", endpoint="sales")
