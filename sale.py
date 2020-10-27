@@ -255,8 +255,9 @@ def sale_detail(lang, id):
     Not required login decorator because create new sale
     anonymous users (not loggin in)
     '''
-    if not session.get('logged_in'):
-        session.pop('customer', None)
+    customer = session.get('customer')
+    if not customer:
+        abort(404)
 
     domain = [
         ('id', '=', id),
@@ -269,7 +270,10 @@ def sale_detail(lang, id):
             ('shipment_party', '=', session['customer'])
             ]]
     else:
-        domain.append(('party', '=', session['customer']))
+        domain.append(('party', '=', customer))
+
+    if not session.get('logged_in'):
+        session.pop('customer', None)
 
     sales = Sale.search(domain, limit=1)
     if not sales:
