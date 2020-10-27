@@ -94,7 +94,7 @@ def admin_sale_detail(lang, id):
         'name': _('Sales'),
         }, {
         'slug': url_for('.admin-sale', lang=g.language, id=sale.id),
-        'name': sale.number or _('Not reference'),
+        'name': sale.number or '#%s' % sale.id,
         }]
 
     return render_template('admin/sale.html',
