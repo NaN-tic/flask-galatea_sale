@@ -44,6 +44,10 @@ def sale_print(lang, id):
         ('shop', 'in', SHOPS),
         ('state', 'in', STATE_SALE_PRINT),
         ]
+    custom_domain = Sale.galatea_domain()
+    if custom_domain:
+        domain += custom_domain
+
     if not session.get('manager', False):
         if session.get('b2b'):
             domain += [['OR',
@@ -135,10 +139,7 @@ def admin_sale_list(lang):
     except ValueError:
         page = 1
 
-    if hasattr(Sale, 'get_flask_admin_sale_list_domain'):
-        domain = Sale.get_flask_admin_sale_list_domain()
-    else:
-        domain = []
+    domain = []
     q = request.args.get('q')
     if q:
         domain.append(('rec_name', 'ilike', '%'+q+'%'))
@@ -151,6 +152,9 @@ def admin_sale_list(lang):
             [('rec_name', 'ilike', '%'+shipment_address+'%')]
             )
         domain.append(('shipment_address', 'in', shipment_address_id))
+    custom_domain = Sale.galatea_admin_domain()
+    if custom_domain:
+        domain += custom_domain
 
     total = Sale.search_count(domain)
     offset = (page-1)*LIMIT
@@ -208,6 +212,9 @@ def change_payment(lang):
             ]]
     else:
         domain.append(('party', '=', session['customer']))
+    custom_domain = Sale.galatea_domain()
+    if custom_domain:
+        domain += custom_domain
 
     sales = Sale.search(domain, limit=1)
     if not sales:
@@ -271,6 +278,9 @@ def sale_detail(lang, id):
             ]]
     else:
         domain.append(('party', '=', customer))
+    custom_domain = Sale.galatea_domain()
+    if custom_domain:
+        domain += custom_domain
 
     if not session.get('logged_in'):
         session.pop('customer', None)
@@ -318,6 +328,7 @@ def sale_cancel(lang):
         return redirect(url_for('.sales', lang=g.language))
 
     domain = [
+        ('id', '=', id),
         ('shop', 'in', SHOPS),
         ('state', 'not in', STATE_EXCLUDE),
         ]
@@ -328,6 +339,9 @@ def sale_cancel(lang):
             ]]
     else:
         domain.append(('party', '=', session['customer']))
+    custom_domain = Sale.galatea_domain()
+    if custom_domain:
+        domain += custom_domain
 
     sales = Sale.search(domain, limit=1)
     if not sales:
@@ -369,6 +383,9 @@ def sale_list(lang):
             ]]
     else:
         domain.append(('party', '=', session['customer']))
+    custom_domain = Sale.galatea_domain()
+    if custom_domain:
+        domain += custom_domain
 
     total = Sale.search_count(domain)
     offset = (page-1)*LIMIT
