@@ -81,9 +81,15 @@ def sale_print(lang, id):
 @tryton.transaction()
 def admin_sale_detail(lang, id):
     '''Admin Sale Detail'''
-    sales = Sale.search([
+
+    domain = [
         ('id', '=', id),
-        ], limit=1)
+        ]
+    custom_domain = Sale.galatea_admin_domain()
+    if custom_domain:
+        domain += custom_domain
+
+    sales = Sale.search(domain, limit=1)
     if not sales:
         abort(404)
 
@@ -116,9 +122,14 @@ def admin_sale_cancel(lang):
     if not id:
         flash(_('Error when cancel. Select a sale to cancel.'), "danger")
 
-    sales = Sale.search([
+    domain = [
         ('id', '=', id),
-        ], limit=1)
+        ]
+    custom_domain = Sale.galatea_admin_domain()
+    if custom_domain:
+        domain += custom_domain
+
+    sales = Sale.search(domain, limit=1)
     if not sales:
         flash(_('Error when cancel. You not have permisions to cancel.'), "danger")
 
