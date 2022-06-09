@@ -44,7 +44,7 @@ def sale_print(lang, id):
         ('shop', 'in', SHOPS),
         ('state', 'in', STATE_SALE_PRINT),
         ]
-    custom_domain = Sale.galatea_domain()
+    custom_domain = Sale.galatea_domain(session)
     if custom_domain:
         domain += custom_domain
 
@@ -85,7 +85,7 @@ def admin_sale_detail(lang, id):
     domain = [
         ('id', '=', id),
         ]
-    custom_domain = Sale.galatea_admin_domain()
+    custom_domain = Sale.galatea_admin_domain(session)
     if custom_domain:
         domain += custom_domain
 
@@ -125,7 +125,7 @@ def admin_sale_cancel(lang):
     domain = [
         ('id', '=', id),
         ]
-    custom_domain = Sale.galatea_admin_domain()
+    custom_domain = Sale.galatea_admin_domain(session)
     if custom_domain:
         domain += custom_domain
 
@@ -163,7 +163,7 @@ def admin_sale_list(lang):
             [('rec_name', 'ilike', '%'+shipment_address+'%')]
             )
         domain.append(('shipment_address', 'in', shipment_address_id))
-    custom_domain = Sale.galatea_admin_domain()
+    custom_domain = Sale.galatea_admin_domain(session)
     if custom_domain:
         domain += custom_domain
 
@@ -223,7 +223,7 @@ def change_payment(lang):
             ]]
     else:
         domain.append(('party', '=', session['customer']))
-    custom_domain = Sale.galatea_domain()
+    custom_domain = Sale.galatea_domain(session)
     if custom_domain:
         domain += custom_domain
 
@@ -289,7 +289,7 @@ def sale_detail(lang, id):
             ]]
     else:
         domain.append(('party', '=', customer))
-    custom_domain = Sale.galatea_domain()
+    custom_domain = Sale.galatea_domain(session)
     if custom_domain:
         domain += custom_domain
 
@@ -350,7 +350,7 @@ def sale_cancel(lang):
             ]]
     else:
         domain.append(('party', '=', session['customer']))
-    custom_domain = Sale.galatea_domain()
+    custom_domain = Sale.galatea_domain(session)
     if custom_domain:
         domain += custom_domain
 
@@ -394,7 +394,7 @@ def sale_list(lang):
             ]]
     else:
         domain.append(('party', '=', session['customer']))
-    custom_domain = Sale.galatea_domain()
+    custom_domain = Sale.galatea_domain(session)
     if custom_domain:
         domain += custom_domain
 
