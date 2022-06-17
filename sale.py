@@ -44,7 +44,7 @@ def sale_print(lang, id):
         ('shop', 'in', SHOPS),
         ('state', 'in', STATE_SALE_PRINT),
         ]
-    custom_domain = Sale.galatea_domain()
+    custom_domain = Sale.galatea_domain(session)
     if custom_domain:
         domain += custom_domain
 
@@ -81,9 +81,15 @@ def sale_print(lang, id):
 @tryton.transaction()
 def admin_sale_detail(lang, id):
     '''Admin Sale Detail'''
-    sales = Sale.search([
+
+    domain = [
         ('id', '=', id),
-        ], limit=1)
+        ]
+    custom_domain = Sale.galatea_admin_domain(session)
+    if custom_domain:
+        domain += custom_domain
+
+    sales = Sale.search(domain, limit=1)
     if not sales:
         abort(404)
 
@@ -116,9 +122,14 @@ def admin_sale_cancel(lang):
     if not id:
         flash(_('Error when cancel. Select a sale to cancel.'), "danger")
 
-    sales = Sale.search([
+    domain = [
         ('id', '=', id),
-        ], limit=1)
+        ]
+    custom_domain = Sale.galatea_admin_domain(session)
+    if custom_domain:
+        domain += custom_domain
+
+    sales = Sale.search(domain, limit=1)
     if not sales:
         flash(_('Error when cancel. You not have permisions to cancel.'), "danger")
 
@@ -152,7 +163,7 @@ def admin_sale_list(lang):
             [('rec_name', 'ilike', '%'+shipment_address+'%')]
             )
         domain.append(('shipment_address', 'in', shipment_address_id))
-    custom_domain = Sale.galatea_admin_domain()
+    custom_domain = Sale.galatea_admin_domain(session)
     if custom_domain:
         domain += custom_domain
 
@@ -212,7 +223,7 @@ def change_payment(lang):
             ]]
     else:
         domain.append(('party', '=', session['customer']))
-    custom_domain = Sale.galatea_domain()
+    custom_domain = Sale.galatea_domain(session)
     if custom_domain:
         domain += custom_domain
 
@@ -278,7 +289,7 @@ def sale_detail(lang, id):
             ]]
     else:
         domain.append(('party', '=', customer))
-    custom_domain = Sale.galatea_domain()
+    custom_domain = Sale.galatea_domain(session)
     if custom_domain:
         domain += custom_domain
 
@@ -339,7 +350,7 @@ def sale_cancel(lang):
             ]]
     else:
         domain.append(('party', '=', session['customer']))
-    custom_domain = Sale.galatea_domain()
+    custom_domain = Sale.galatea_domain(session)
     if custom_domain:
         domain += custom_domain
 
@@ -383,7 +394,7 @@ def sale_list(lang):
             ]]
     else:
         domain.append(('party', '=', session['customer']))
-    custom_domain = Sale.galatea_domain()
+    custom_domain = Sale.galatea_domain(session)
     if custom_domain:
         domain += custom_domain
 
