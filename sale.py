@@ -23,6 +23,7 @@ LIMIT_TOTAL_LAST_PRODUCTS = current_app.config.get('TRYTON_TOTAL_LAST_PRODUCTS_L
 STATE_EXCLUDE = current_app.config.get('TRYTON_SALE_STATE_EXCLUDE', [])
 STATE_SALE_PRINT = current_app.config.get('TRYTON_SALE_PRINT', ['done'])
 
+Party = tryton.pool.get('party.party')
 Sale = tryton.pool.get('sale.sale')
 SaleReport = tryton.pool.get('sale.sale', type='report')
 SaleWishlist = tryton.pool.get('sale.wishlist')
@@ -49,7 +50,7 @@ def sale_print(lang, id):
         domain += custom_domain
 
     if not session.get('manager', False):
-        if session.get('b2b'):
+        if session.get('b2b') or hasattr(Party, 'party_sale_payer'):
             domain += [['OR',
                 ('party', '=', session['customer']),
                 ('shipment_party', '=', session['customer'])
@@ -216,7 +217,7 @@ def change_payment(lang):
         ('shop', 'in', SHOPS),
         ('state', 'not in', STATE_EXCLUDE),
         ]
-    if session.get('b2b'):
+    if session.get('b2b') or hasattr(Party, 'party_sale_payer'):
         domain += [['OR',
             ('party', '=', session['customer']),
             ('shipment_party', '=', session['customer'])
@@ -282,7 +283,7 @@ def sale_detail(lang, id):
         ('shop', 'in', SHOPS),
         ('state', 'not in', STATE_EXCLUDE),
         ]
-    if session.get('b2b'):
+    if session.get('b2b') or hasattr(Party, 'party_sale_payer'):
         domain += [['OR',
             ('party', '=', session['customer']),
             ('shipment_party', '=', session['customer'])
@@ -343,7 +344,7 @@ def sale_cancel(lang):
         ('shop', 'in', SHOPS),
         ('state', 'not in', STATE_EXCLUDE),
         ]
-    if session.get('b2b'):
+    if session.get('b2b') or hasattr(Party, 'party_sale_payer'):
         domain += [['OR',
             ('party', '=', session['customer']),
             ('shipment_party', '=', session['customer'])
@@ -387,7 +388,7 @@ def sale_list(lang):
         ('shop', 'in', SHOPS),
         ('state', 'not in', STATE_EXCLUDE),
         ]
-    if session.get('b2b'):
+    if session.get('b2b') or hasattr(Party, 'party_sale_payer'):
         domain += [['OR',
             ('party', '=', session['customer']),
             ('shipment_party', '=', session['customer'])
