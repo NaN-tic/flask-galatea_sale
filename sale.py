@@ -75,7 +75,7 @@ def sale_print(lang, id):
     temp.close()
     data = open(temp.name, 'rb')
 
-    return send_file(data, attachment_filename=report_name, as_attachment=True)
+    return send_file(data, download_name=report_name, as_attachment=True)
 
 @sale.route("/admin/<int:id>", endpoint="admin-sale")
 @manager_required
