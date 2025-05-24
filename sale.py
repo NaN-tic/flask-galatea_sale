@@ -1,4 +1,4 @@
-from trytond.utils import slugify
+from trytond.tools import slugify
 from flask import Blueprint, render_template, current_app, abort, g, \
     url_for, request, session, redirect, flash, jsonify, send_file
 from galatea.tryton import tryton
