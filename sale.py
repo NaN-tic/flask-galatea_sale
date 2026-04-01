@@ -291,13 +291,12 @@ def change_payment(lang):
 @tryton.transaction()
 def sale_detail(lang, id):
     '''Sale Detail
-    Party = tryton.pool.get('party.party')
-    Sale = tryton.pool.get('sale.sale')
-
 
     Not required login decorator because create new sale
     anonymous users (not loggin in)
     '''
+    Party = tryton.pool.get('party.party')
+    Sale = tryton.pool.get('sale.sale')
     customer = session.get('customer')
     if not customer:
         abort(404)
