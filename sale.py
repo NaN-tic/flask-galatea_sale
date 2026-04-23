@@ -1,9 +1,8 @@
 from trytond.tools import slugify
 from flask import Blueprint, render_template, current_app, abort, g, \
     url_for, request, session, redirect, flash, jsonify, send_file
-from galatea.tryton import tryton
+from app_extensions import tryton
 from galatea.helpers import login_required, customer_required, manager_required
-from galatea.csrf import csrf
 from flask_babel import gettext as _, lazy_gettext, ngettext
 from flask_paginate import Pagination
 from trytond.transaction import Transaction
@@ -14,22 +13,36 @@ sale = Blueprint('sale', __name__, template_folder='templates')
 
 DISPLAY_MSG = lazy_gettext('Displaying <b>{start} - {end}</b> of <b>{total}</b>')
 
-SHOP = current_app.config.get('TRYTON_SALE_SHOP')
-SHOPS = current_app.config.get('TRYTON_SALE_SHOPS')
-LIMIT = current_app.config.get('TRYTON_PAGINATION_SALE_LIMIT', 20)
-LIMIT_WISHLIST = current_app.config.get('TRYTON_PAGINATION_WISHLIST_LIMIT', 20)
-LIMIT_LAST_PRODUCTS = current_app.config.get('TRYTON_PAGINATION_LAST_PRODUCTS_LIMIT', 20)
-LIMIT_TOTAL_LAST_PRODUCTS = current_app.config.get('TRYTON_TOTAL_LAST_PRODUCTS_LIMIT', 200)
-STATE_EXCLUDE = current_app.config.get('TRYTON_SALE_STATE_EXCLUDE', [])
-STATE_SALE_PRINT = current_app.config.get('TRYTON_SALE_PRINT', ['done'])
+def get_shop_id():
+    return current_app.config.get('TRYTON_SALE_SHOP')
 
-Party = tryton.pool.get('party.party')
-Sale = tryton.pool.get('sale.sale')
-SaleReport = tryton.pool.get('sale.sale', type='report')
-SaleWishlist = tryton.pool.get('sale.wishlist')
-Product = tryton.pool.get('product.product')
-GalateaUser = tryton.pool.get('galatea.user')
-PartyAddress = tryton.pool.get('party.address')
+
+def get_shops():
+    return current_app.config.get('TRYTON_SALE_SHOPS')
+
+
+def get_limit():
+    return current_app.config.get('TRYTON_PAGINATION_SALE_LIMIT', 20)
+
+
+def get_limit_wishlist():
+    return current_app.config.get('TRYTON_PAGINATION_WISHLIST_LIMIT', 20)
+
+
+def get_limit_last_products():
+    return current_app.config.get('TRYTON_PAGINATION_LAST_PRODUCTS_LIMIT', 20)
+
+
+def get_limit_total_last_products():
+    return current_app.config.get('TRYTON_TOTAL_LAST_PRODUCTS_LIMIT', 200)
+
+
+def get_state_exclude():
+    return current_app.config.get('TRYTON_SALE_STATE_EXCLUDE', [])
+
+
+def get_state_sale_print():
+    return current_app.config.get('TRYTON_SALE_PRINT', ['done'])
 
 SALE_STATES_TO_CANCEL = ['draft', 'quotation']
 
@@ -39,11 +52,14 @@ SALE_STATES_TO_CANCEL = ['draft', 'quotation']
 @tryton.transaction()
 def sale_print(lang, id):
     '''Sale Print'''
+    Party = tryton.pool.get('party.party')
+    Sale = tryton.pool.get('sale.sale')
+    SaleReport = tryton.pool.get('sale.sale', type='report')
 
     domain = [
         ('id', '=', id),
-        ('shop', 'in', SHOPS),
-        ('state', 'in', STATE_SALE_PRINT),
+        ('shop', 'in', get_shops()),
+        ('state', 'in', get_state_sale_print()),
         ]
     custom_domain = Sale.galatea_domain(session)
     if custom_domain:
@@ -82,6 +98,7 @@ def sale_print(lang, id):
 @tryton.transaction()
 def admin_sale_detail(lang, id):
     '''Admin Sale Detail'''
+    Sale = tryton.pool.get('sale.sale')
 
     domain = [
         ('id', '=', id),
@@ -115,10 +132,10 @@ def admin_sale_detail(lang, id):
 
 @sale.route("/admin/cancel/", methods=["POST"], endpoint="admin-cancel")
 @manager_required
-@csrf.exempt
 @tryton.transaction()
 def admin_sale_cancel(lang):
     '''Admin Sale Cancel'''
+    Sale = tryton.pool.get('sale.sale')
     id = request.form.get('id')
     if not id:
         flash(_('Error when cancel. Select a sale to cancel.'), "danger")
@@ -145,6 +162,8 @@ def admin_sale_cancel(lang):
 @tryton.transaction()
 def admin_sale_list(lang):
     '''Admin Sales'''
+    Sale = tryton.pool.get('sale.sale')
+    PartyAddress = tryton.pool.get('party.address')
 
     try:
         page = int(request.args.get('page', 1))
@@ -169,16 +188,16 @@ def admin_sale_list(lang):
         domain += custom_domain
 
     total = Sale.search_count(domain)
-    offset = (page-1)*LIMIT
+    offset = (page-1)*get_limit()
 
     order = [
         ('sale_date', 'DESC'),
         ('id', 'DESC'),
         ]
-    sales = Sale.search(domain, offset, LIMIT, order)
+    sales = Sale.search(domain, offset, get_limit(), order)
 
     pagination = Pagination(
-        page=page, total=total, per_page=LIMIT, display_msg=DISPLAY_MSG, bs_version='3')
+        page=page, total=total, per_page=get_limit(), display_msg=DISPLAY_MSG, bs_version='3')
 
     #breadcumbs
     breadcrumbs = [{
@@ -204,6 +223,8 @@ def admin_sale_list(lang):
 @tryton.transaction()
 def change_payment(lang):
     '''Change Payment Type draft or quotation sales'''
+    Party = tryton.pool.get('party.party')
+    Sale = tryton.pool.get('sale.sale')
     id = request.form.get('id')
     payment = request.form.get('payment')
     payment_type = None
@@ -214,8 +235,8 @@ def change_payment(lang):
 
     domain = [
         ('id', '=', id),
-        ('shop', 'in', SHOPS),
-        ('state', 'not in', STATE_EXCLUDE),
+        ('shop', 'in', get_shops()),
+        ('state', 'not in', get_state_exclude()),
         ]
     if session.get('b2b') or hasattr(Party, 'party_sale_payer'):
         domain += [['OR',
@@ -274,14 +295,16 @@ def sale_detail(lang, id):
     Not required login decorator because create new sale
     anonymous users (not loggin in)
     '''
+    Party = tryton.pool.get('party.party')
+    Sale = tryton.pool.get('sale.sale')
     customer = session.get('customer')
     if not customer:
         abort(404)
 
     domain = [
         ('id', '=', id),
-        ('shop', 'in', SHOPS),
-        ('state', 'not in', STATE_EXCLUDE),
+        ('shop', 'in', get_shops()),
+        ('state', 'not in', get_state_exclude()),
         ]
     if session.get('b2b') or hasattr(Party, 'party_sale_payer'):
         domain += [['OR',
@@ -334,6 +357,8 @@ def sale_detail(lang, id):
 @tryton.transaction()
 def sale_cancel(lang):
     '''Sale Cancel'''
+    Party = tryton.pool.get('party.party')
+    Sale = tryton.pool.get('sale.sale')
     id = request.form.get('id')
     if not id:
         flash(_('Error when cancel. Select a sale to cancel.'), "danger")
@@ -341,8 +366,8 @@ def sale_cancel(lang):
 
     domain = [
         ('id', '=', id),
-        ('shop', 'in', SHOPS),
-        ('state', 'not in', STATE_EXCLUDE),
+        ('shop', 'in', get_shops()),
+        ('state', 'not in', get_state_exclude()),
         ]
     if session.get('b2b') or hasattr(Party, 'party_sale_payer'):
         domain += [['OR',
@@ -368,7 +393,7 @@ def sale_cancel(lang):
         flash(_('Error when cancel "{sale}". Your sale is in a state that not available ' \
             'to cancel. Contact Us.'.format(sale=sale.rec_name)), "danger")
 
-    if 'cancel' in STATE_EXCLUDE:
+    if 'cancel' in get_state_exclude():
         return redirect(url_for('.sales', lang=g.language))
     return redirect(url_for('.sale', id=id, lang=g.language))
 
@@ -378,6 +403,8 @@ def sale_cancel(lang):
 @tryton.transaction()
 def sale_list(lang):
     '''Sales'''
+    Party = tryton.pool.get('party.party')
+    Sale = tryton.pool.get('sale.sale')
 
     try:
         page = int(request.args.get('page', 1))
@@ -385,8 +412,8 @@ def sale_list(lang):
         page = 1
 
     domain = [
-        ('shop', 'in', SHOPS),
-        ('state', 'not in', STATE_EXCLUDE),
+        ('shop', 'in', get_shops()),
+        ('state', 'not in', get_state_exclude()),
         ]
     if session.get('b2b') or hasattr(Party, 'party_sale_payer'):
         domain += [['OR',
@@ -400,16 +427,16 @@ def sale_list(lang):
         domain += custom_domain
 
     total = Sale.search_count(domain)
-    offset = (page-1)*LIMIT
+    offset = (page-1)*get_limit()
 
     order = [
         ('sale_date', 'DESC'),
         ('id', 'DESC'),
         ]
-    sales = Sale.search(domain, offset, LIMIT, order)
+    sales = Sale.search(domain, offset, get_limit(), order)
 
     pagination = Pagination(
-        page=page, total=total, per_page=LIMIT, display_msg=DISPLAY_MSG, bs_version='3')
+        page=page, total=total, per_page=get_limit(), display_msg=DISPLAY_MSG, bs_version='3')
 
     #breadcumbs
     breadcrumbs = [{
@@ -432,6 +459,8 @@ def sale_list(lang):
 @tryton.transaction()
 def last_products(lang):
     '''Last products'''
+    GalateaUser = tryton.pool.get('galatea.user')
+    Product = tryton.pool.get('product.product')
     user = GalateaUser(session['user'])
 
     shipment_address = 'AND s.shipment_address=%s' % user.shipment_address.id  \
@@ -456,8 +485,8 @@ def last_products(lang):
         """ % {
             'customer': session['customer'],
             'shipment_address': shipment_address,
-            'limit': LIMIT_TOTAL_LAST_PRODUCTS,
-            'shop': SHOP,
+            'limit': get_limit_total_last_products(),
+            'shop': get_shop_id(),
         }
     cursor = Transaction().connection.cursor()
     cursor.execute(query)
@@ -469,10 +498,10 @@ def last_products(lang):
     except ValueError:
         page = 1
 
-    limit = LIMIT_LAST_PRODUCTS
+    limit = get_limit_last_products()
 
     total = len(results)
-    offset = (page-1)*LIMIT_LAST_PRODUCTS
+    offset = (page-1)*get_limit_last_products()
 
     domain = [('id', 'in', results)]
     last_products = Product.search(domain, offset, limit)
@@ -496,12 +525,13 @@ def last_products(lang):
     )
 
 @sale.route('/wishlist/add', methods=['POST'], endpoint="wishlist-add")
-@csrf.exempt
 @login_required
 @customer_required
 @tryton.transaction()
 def wishlist_add(lang):
     '''Add Wishlist products'''
+    Product = tryton.pool.get('product.product')
+    SaleWishlist = tryton.pool.get('sale.wishlist')
     success = []
     warning = []
 
@@ -522,7 +552,7 @@ def wishlist_add(lang):
         ('id', 'in', ids),
         ('esale_available', '=', True),
         ('esale_active', '=', True),
-        ('shops', 'in', [SHOP]),
+        ('shops', 'in', [get_shop_id()]),
         ]
     products = Product.search(domain)
 
@@ -559,12 +589,12 @@ def wishlist_add(lang):
     return jsonify(result=True, messages=messages)
 
 @sale.route("/wishlist", methods=["GET", "POST"], endpoint="wishlist")
-@csrf.exempt
 @login_required
 @customer_required
 @tryton.transaction()
 def wishlist(lang):
     '''Wishlist products'''
+    SaleWishlist = tryton.pool.get('sale.wishlist')
     if request.method == 'POST':
         # Delete wishlists
         removes = request.form.getlist('remove')
@@ -586,13 +616,13 @@ def wishlist(lang):
     except ValueError:
         page = 1
 
-    limit = LIMIT_WISHLIST
+    limit = get_limit_wishlist()
 
     domain = [
         ('party', '=', session['customer']),
         ('product.esale_available', '=', True),
         ('product.esale_active', '=', True),
-        ('product.shops', 'in', [SHOP]),
+        ('product.shops', 'in', [get_shop_id()]),
         ]
 
     total = SaleWishlist.search_count(domain)
